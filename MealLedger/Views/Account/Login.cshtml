@@ -1,0 +1,411 @@
+﻿@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MealLedger | Login</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f8;
+        }
+
+        /* Left Panel */
+        .left-panel {
+            width: 55%;
+            background: linear-gradient(160deg, #2d1b69 0%, #4a2d9c 40%, #6b3fa0 70%, #8b5cf6 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .left-panel::before {
+                content: '';
+                position: absolute;
+                width: 400px;
+                height: 400px;
+                background: rgba(255,255,255,0.04);
+                border-radius: 50%;
+                top: -100px;
+                left: -100px;
+            }
+
+            .left-panel::after {
+                content: '';
+                position: absolute;
+                width: 300px;
+                height: 300px;
+                background: rgba(255,255,255,0.04);
+                border-radius: 50%;
+                bottom: -80px;
+                right: -80px;
+            }
+
+            .left-panel .logo-area {
+                text-align: center;
+                z-index: 1;
+            }
+
+                .left-panel .logo-area img {
+                    width: 80px;
+                    margin-bottom: 25px;
+                    filter: brightness(0) invert(1);
+                }
+
+            .left-panel h1 {
+                color: #ffffff;
+                font-size: 36px;
+                font-weight: 700;
+                margin-bottom: 12px;
+                letter-spacing: -0.5px;
+            }
+
+            .left-panel p {
+                color: rgba(255,255,255,0.7);
+                font-size: 15px;
+                line-height: 1.7;
+                max-width: 320px;
+                text-align: center;
+            }
+
+        .feature-pills {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 40px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .pill {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: rgba(255,255,255,0.85);
+            font-size: 13px;
+        }
+
+            .pill i {
+                width: 32px;
+                height: 32px;
+                background: rgba(255,255,255,0.12);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                color: #c4b5fd;
+                flex-shrink: 0;
+            }
+
+        /* Right Panel */
+        .right-panel {
+            width: 45%;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 50px;
+        }
+
+        .login-box {
+            width: 100%;
+            max-width: 380px;
+        }
+
+            .login-box .welcome-text {
+                font-size: 28px;
+                font-weight: 700;
+                color: #1e1b4b;
+                margin-bottom: 6px;
+            }
+
+            .login-box .sub-text {
+                font-size: 14px;
+                color: #6b7280;
+                margin-bottom: 36px;
+            }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 7px;
+        }
+
+        .form-control {
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px 42px 12px 15px;
+            font-size: 14px;
+            color: #1f2937;
+            background: #fafafa;
+            transition: all 0.25s;
+        }
+
+            .form-control:focus {
+                border-color: #7c3aed;
+                box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+                background: #fff;
+                outline: none;
+            }
+
+            .form-control::placeholder {
+                color: #9ca3af;
+            }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #4a2d9c, #7c3aed);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 13px;
+            width: 100%;
+            margin-top: 8px;
+            transition: all 0.3s;
+            letter-spacing: 0.3px;
+        }
+
+            .btn-login:hover {
+                background: linear-gradient(135deg, #3b1f8a, #6d28d9);
+                transform: translateY(-1px);
+                box-shadow: 0 8px 20px rgba(124,58,237,0.35);
+                color: white;
+            }
+
+            .btn-login:disabled {
+                opacity: 0.75;
+                transform: none;
+            }
+
+        .error-alert {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 10px;
+            color: #dc2626;
+            font-size: 13px;
+            padding: 11px 14px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .field-error {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #e5e7eb, transparent);
+            margin: 28px 0;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+            .footer-note span {
+                color: #7c3aed;
+                font-weight: 600;
+            }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .left-panel {
+                display: none;
+            }
+
+            .right-panel {
+                width: 100%;
+                padding: 40px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Left Panel -->
+    <div class="left-panel">
+        <div class="logo-area">
+            <img src="~/images/Logo.png" alt="Logo" />
+            <h1>MealLedger</h1>
+            <p>Smart lunch management for your workplace. Register, track and manage meals effortlessly.</p>
+        </div>
+
+        <div class="feature-pills">
+            <div class="pill">
+                <i class="fa-solid fa-calendar-check"></i>
+                <span>Register lunch for the entire week in one go</span>
+            </div>
+            <div class="pill">
+                <i class="fa-solid fa-print"></i>
+                <span>Admin can export & print daily meal sheets</span>
+            </div>
+            <div class="pill">
+                <i class="fa-solid fa-map-marker-alt"></i>
+                <span>Location based holiday calendar</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="right-panel">
+        <div class="login-box">
+
+            <div class="welcome-text">Welcome 👋</div>
+            <div class="sub-text">Sign in with your Workday ID to continue</div>
+
+            <!-- Server Error -->
+            <div id="serverError" class="error-alert">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="serverErrorText"></span>
+            </div>
+
+            <!-- Login Form -->
+            @using (Html.BeginForm("Login", "Account", FormMethod.Post, new { id = "loginForm" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="mb-4">
+                    <label class="form-label">Workday ID</label>
+                    <div class="input-wrapper">
+                        @Html.TextBox("workdayID", null, new
+                        {
+                            @class = "form-control",
+                                        placeholder = "e.g.000123",
+                                        autocomplete = "off",
+                                        autofocus = "autofocus",
+                                        id = "workdayID"
+                                        })
+                    <i class="fa-solid fa-id-badge input-icon"></i>
+                </div>
+                <div id="idError" class="field-error">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                    Please enter your Workday ID.
+                </div>
+            </div>
+
+            <button type="submit" class="btn-login" id="loginBtn">
+                <i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Sign In
+            </button>
+                        }
+
+            <div class="divider"></div>
+
+            <div class="footer-note">
+                Access issues? Contact <span>IT Support</span>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+
+            // Hide errors on typing
+            $('#workdayID').on('input', function () {
+                $('#idError').hide();
+                $('#serverError').hide();
+            });
+
+            // Ajax submit
+            $('#loginForm').on('submit', function (e) {
+                e.preventDefault();
+
+                var workdayID = $('#workdayID').val().trim();
+                console.log(workdayID);
+
+                // Client validation
+                if (!workdayID) {
+                    $('#idError').show();
+                    return;
+                }
+
+                var token = $('input[name="__RequestVerificationToken"]').val();
+
+                // Loading
+                $('#loginBtn').prop('disabled', true)
+                              .html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Signing in...');
+
+                $.ajax({
+                    url: '@Url.Action("Login", "Account")',
+                    type: 'POST',
+                    data: { workdayID: workdayID },
+                    headers: { 'RequestVerificationToken': token },
+                    success: function (response) {
+                        if (response.success) {
+                            window.location.href = response.redirectUrl;
+                        } else {
+                            $('#serverErrorText').text(response.message);
+                            $('#serverError').css('display', 'flex');
+                            resetBtn();
+                        }
+                    },
+                    error: function () {
+                        $('#serverErrorText').text('Something went wrong. Please try again.');
+                        $('#serverError').css('display', 'flex');
+                        resetBtn();
+                    }
+                });
+            });
+
+            function resetBtn() {
+                $('#loginBtn').prop('disabled', false)
+                              .html('<i class="fa-solid fa-arrow-right-to-bracket me-2"></i> Sign In');
+            }
+
+        });
+    </script>
+
+</body>
+</html>

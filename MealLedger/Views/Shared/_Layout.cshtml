@@ -611,7 +611,8 @@
 <body>
 
     @{
-        var fullName = Context.Session.GetString("FullName") ?? "User";
+        var fullName = Context.Session.GetString("FullName") ?? "User";      
+        var employeeId = Context.Session.GetString("WorkdayID") ?? "User";
         var role = Context.Session.GetString("Role") ?? "Employee";
         var initials = string.Concat(fullName.Split(' ').Take(2).Select(w => w[0].ToString().ToUpper()));
         var isAdmin = role == "Admin";
@@ -641,12 +642,12 @@
                 <i class="nav-icon fa-solid fa-utensils"></i>
                 <span class="nav-label">Lunch</span>
             </a>
-            <a href="@Url.Action("Index", "Calendar")"
+            @* <a href="@Url.Action("Index", "Calendar")"
                class="nav-item @(activePage == "Calendar" ? "active" : "")"
                onclick="closeDrawer()">
                 <i class="nav-icon fa-regular fa-calendar"></i>
                 <span class="nav-label">Calendar</span>
-            </a>
+            </a> *@
             @if (isAdmin)
             {
                 <a href="@Url.Action("Index", "Admin")"
@@ -690,11 +691,11 @@
                 <i class="nav-icon fa-solid fa-utensils"></i>
                 <span class="nav-label">Lunch</span>
             </a>
-            <a href="@Url.Action("Index", "Calendar")"
+           @*  <a href="@Url.Action("Index", "Calendar")"
                class="nav-item @(activePage == "Calendar" ? "active" : "")">
                 <i class="nav-icon fa-regular fa-calendar"></i>
                 <span class="nav-label">Calendar</span>
-            </a>
+            </a> *@
             @if (isAdmin)
             {
                 <a href="@Url.Action("Index", "Admin")"
@@ -736,7 +737,8 @@
                 <div class="topbar-user">
                     <div class="topbar-name">
                         <div class="name">@fullName</div>
-                        <div class="role">@role</div>
+                        <div class="role">@role : @employeeId</div>
+                      
                     </div>
                     <div class="topbar-avatar">@initials</div>
                 </div>
@@ -761,10 +763,10 @@
                    class="bottom-nav-item @(activePage == "Lunch" ? "active" : "")">
                     <i class="fa-solid fa-utensils"></i><span>Lunch</span>
                 </a>
-                <a href="@Url.Action("Index", "Calendar")"
+               @*  <a href="@Url.Action("Index", "Calendar")"
                    class="bottom-nav-item @(activePage == "Calendar" ? "active" : "")">
                     <i class="fa-regular fa-calendar"></i><span>Calendar</span>
-                </a>
+                </a> *@
                 @if (isAdmin)
                 {
                     <a href="@Url.Action("Index", "Admin")"

@@ -4,6 +4,7 @@ using MealLedger.IServices;
 using MealLedger.Repositories;
 using MealLedger.Services;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +25,13 @@ builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IDashboardRepositorycs, DashboardRepository>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IAdminRepository, AdminRepository>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
+builder.Services.AddScoped<ILunchRepository, LunchRepository>();
+builder.Services.AddScoped<ILunchService, LunchService>();
+// Add this line in Program.cs before var app = builder.Build();
+//ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

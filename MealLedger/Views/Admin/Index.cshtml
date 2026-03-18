@@ -1,0 +1,787 @@
+﻿@model MealLedger.DTO.AdminViewModel
+
+@{
+    ViewData["Title"] = "Admin Panel";
+    ViewData["Subtitle"] = "Manage lunch registrations";
+    ViewData["ActivePage"] = "Admin";
+}
+
+@section Styles {
+    <style>
+        .filter-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 12px rgba(91,33,182,0.07);
+            border: 1px solid #ede9fe;
+            margin-bottom: 20px;
+        }
+
+        .filter-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #5b21b6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 140px;
+        }
+
+            .filter-group label {
+                font-size: 11px;
+                font-weight: 700;
+                color: #8b7ec8;
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
+            }
+
+        .filter-control {
+            padding: 9px 12px;
+            border: 1.5px solid #ede9fe;
+            border-radius: 9px;
+            font-size: 13px;
+            color: #1e1b4b;
+            background: #faf9ff;
+            font-family: inherit;
+            transition: all 0.2s;
+            outline: none;
+            cursor: pointer;
+        }
+
+            .filter-control:focus {
+                border-color: #7c3aed;
+                box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+                background: white;
+            }
+
+        .btn-search {
+            padding: 9px 20px;
+            background: linear-gradient(135deg, #4a2d9c, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+
+            .btn-search:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 5px 16px rgba(124,58,237,0.35);
+            }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 12px rgba(91,33,182,0.07);
+            border: 1px solid #ede9fe;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .summary-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+            .summary-icon.purple {
+                background: #ede9fe;
+                color: #7c3aed;
+            }
+
+            .summary-icon.green {
+                background: #dcfce7;
+                color: #16a34a;
+            }
+
+            .summary-icon.orange {
+                background: #fff7ed;
+                color: #ea580c;
+            }
+
+        .summary-info .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1e1b4b;
+            line-height: 1;
+        }
+
+        .summary-info .label {
+            font-size: 12px;
+            color: #8b7ec8;
+            margin-top: 3px;
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 2px 12px rgba(91,33,182,0.07);
+            border: 1px solid #ede9fe;
+        }
+
+        .table-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 16px;
+            gap: 10px;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-export {
+            padding: 8px 16px;
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+            .btn-export:hover {
+                background: #bbf7d0;
+                text-decoration: none;
+                color: #15803d;
+            }
+
+        .btn-print {
+            padding: 8px 16px;
+            background: #ede9fe;
+            color: #5b21b6;
+            border: 1px solid #c4b5fd;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .btn-print:hover {
+                background: #c4b5fd;
+            }
+
+        .reg-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+            .reg-table thead tr {
+                background: linear-gradient(135deg, #4a2d9c, #7c3aed);
+                color: white;
+            }
+
+            .reg-table thead th {
+                padding: 12px 14px;
+                text-align: left;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
+                white-space: nowrap;
+            }
+
+                .reg-table thead th:first-child {
+                    border-radius: 8px 0 0 8px;
+                }
+
+                .reg-table thead th:last-child {
+                    border-radius: 0 8px 8px 0;
+                }
+
+            .reg-table tbody tr {
+                border-bottom: 1px solid #f3f0ff;
+                transition: background 0.15s;
+            }
+
+                .reg-table tbody tr:hover {
+                    background: #faf9ff;
+                }
+
+                .reg-table tbody tr:nth-child(even) {
+                    background: #faf9ff;
+                }
+
+            .reg-table td {
+                padding: 11px 14px;
+                color: #374151;
+                vertical-align: middle;
+            }
+
+        .pref-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+            .pref-badge.veg {
+                background: #dcfce7;
+                color: #15803d;
+            }
+
+            .pref-badge.nonveg {
+                background: #fff7ed;
+                color: #c2410c;
+            }
+
+        .empty-table {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a89fd8;
+        }
+
+            .empty-table i {
+                font-size: 36px;
+                display: block;
+                margin-bottom: 10px;
+                opacity: 0.4;
+            }
+
+        .table-loading {
+            text-align: center;
+            padding: 40px;
+            color: #8b7ec8;
+            display: none;
+        }
+
+        /* ── Print Styles ── */
+        .print-header {
+            display: none;
+        }
+
+        @@media print {
+            .filter-card,
+            .table-actions,
+            .sidebar,
+            .topbar,
+            .bottom-nav,
+            .mobile-drawer,
+            .mobile-overlay,
+            .hamburger,
+            .btn-logout {
+                display: none !important;
+            }
+
+            body {
+                background: white !important;
+                overflow: visible !important;
+                display: block !important;
+                font-family: 'DM Sans', sans-serif;
+            }
+
+            .main {
+                overflow: visible !important;
+                display: block !important;
+            }
+
+            .page-content {
+                padding: 10px !important;
+                overflow: visible !important;
+            }
+
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 16px;
+                padding-bottom: 12px;
+                border-bottom: 2px solid #4a2d9c;
+            }
+
+                .print-header h2 {
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #1e1b4b;
+                    margin-bottom: 4px;
+                }
+
+                .print-header p {
+                    font-size: 11px;
+                    color: #5b5b8a;
+                }
+
+            .summary-grid {
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 0 !important;
+                margin-bottom: 14px !important;
+                border: 1.5px solid #ede9fe !important;
+                border-radius: 10px !important;
+                overflow: hidden !important;
+                box-shadow: none !important;
+            }
+
+            .summary-card {
+                flex: 1 !important;
+                border-radius: 0 !important;
+                border: none !important;
+                border-right: 1px solid #ede9fe !important;
+                box-shadow: none !important;
+                padding: 10px 14px !important;
+            }
+
+                .summary-card:last-child {
+                    border-right: none !important;
+                }
+
+            .summary-icon {
+                width: 32px !important;
+                height: 32px !important;
+                font-size: 14px !important;
+                border-radius: 8px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+                .summary-icon.purple {
+                    background: #ede9fe !important;
+                    color: #7c3aed !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+
+                .summary-icon.green {
+                    background: #dcfce7 !important;
+                    color: #16a34a !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+
+                .summary-icon.orange {
+                    background: #fff7ed !important;
+                    color: #ea580c !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+
+            .summary-info .value {
+                font-size: 20px !important;
+                color: #1e1b4b !important;
+            }
+
+            .summary-info .label {
+                font-size: 11px !important;
+                color: #8b7ec8 !important;
+            }
+
+            .table-card {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+
+            .table-title {
+                font-size: 13px !important;
+                margin-bottom: 10px !important;
+            }
+
+            .reg-table {
+                font-size: 11px !important;
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+
+                .reg-table thead tr {
+                    background: #4a2d9c !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+
+                .reg-table thead th {
+                    padding: 8px 10px !important;
+                    font-size: 10px !important;
+                    color: white !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+
+                    .reg-table thead th:first-child {
+                        border-radius: 0 !important;
+                    }
+
+                    .reg-table thead th:last-child {
+                        border-radius: 0 !important;
+                    }
+
+                .reg-table td {
+                    padding: 7px 10px !important;
+                    border-bottom: 1px solid #ede9fe !important;
+                }
+
+                .reg-table tbody tr:nth-child(even) {
+                    background: #faf9ff !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+
+            .pref-badge {
+                font-size: 10px !important;
+                padding: 2px 6px !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+                .pref-badge.veg {
+                    background: #dcfce7 !important;
+                    color: #15803d !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+
+                .pref-badge.nonveg {
+                    background: #fff7ed !important;
+                    color: #c2410c !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+        }
+
+        @@media (max-width: 768px) {
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-row {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                min-width: 100%;
+            }
+
+            .table-card {
+                padding: 14px;
+                overflow-x: auto;
+            }
+        }
+    </style>
+}
+
+<!-- Print Header -->
+<div class="print-header">
+    <h2>MealLedger — Lunch Registrations</h2>
+    <p id="printSubtitle">Date: @DateTime.Today.ToString("dd MMM yyyy")</p>
+</div>
+
+<!-- Filter Card -->
+<div class="filter-card">
+    <div class="filter-title">
+        <i class="fa-solid fa-filter"></i> Filters
+    </div>
+    <div class="filter-row">
+
+        <!-- ✅ From Date -->
+        <div class="filter-group">
+            <label>From Date</label>
+            <input type="date" id="filterFromDate" class="filter-control"
+                   value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+        </div>
+
+        <!-- ✅ To Date -->
+        <div class="filter-group">
+            <label>To Date</label>
+            <input type="date" id="filterToDate" class="filter-control"
+                   value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+        </div>
+
+        <!-- Location -->
+        <div class="filter-group">
+            <label>Location</label>
+            <select id="filterLocation" class="filter-control">
+                <option value="All">All Locations</option>
+                @foreach (var loc in Model.Locations)
+                {
+                    <option value="@loc">@loc</option>
+                }
+            </select>
+        </div>
+
+        <!-- Preference -->
+        <div class="filter-group">
+            <label>Preference</label>
+            <select id="filterPreference" class="filter-control">
+                <option value="All">All</option>
+                <option value="Veg">🥦 Veg</option>
+                <option value="NonVeg">🍗 Non-Veg</option>
+            </select>
+        </div>
+
+        <!-- Search -->
+        <button class="btn-search" onclick="applyFilter()">
+            <i class="fa-solid fa-magnifying-glass"></i> Search
+        </button>
+
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="summary-grid">
+    <div class="summary-card">
+        <div class="summary-icon purple">
+            <i class="fa-solid fa-users"></i>
+        </div>
+        <div class="summary-info">
+            <div class="value" id="totalCount">@Model.TotalCount</div>
+            <div class="label">Total Registered</div>
+        </div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-icon green">
+            <i class="fa-solid fa-leaf"></i>
+        </div>
+        <div class="summary-info">
+            <div class="value" id="vegCount">@Model.VegCount</div>
+            <div class="label">Veg</div>
+        </div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-icon orange">
+            <i class="fa-solid fa-drumstick-bite"></i>
+        </div>
+        <div class="summary-info">
+            <div class="value" id="nonVegCount">@Model.NonVegCount</div>
+            <div class="label">Non-Veg</div>
+        </div>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="table-card">
+    <div class="table-header">
+        <div class="table-actions">
+            <button class="btn-export" onclick="exportExcel()">
+                <i class="fa-solid fa-file-excel"></i> Export Excel
+            </button>
+            <button class="btn-print" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="table-loading" id="tableLoading">
+        <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+        <div style="margin-top:10px;font-size:13px;">Loading...</div>
+    </div>
+
+    <!-- Table -->
+    <div style="overflow-x:auto;">
+        <table class="reg-table" id="regTable">
+            <thead>
+                <tr>
+                    <th>SNO</th>
+                    <th>Workday ID</th>
+                    <th>Name</th>
+                    <th>Preference</th>
+                    <th>Signature</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                @if (Model.Registrations.Any())
+                {
+                    int sno = 1;
+                    @foreach (var r in Model.Registrations)
+                    {
+                        <tr>
+                            <td>@sno</td>
+                            <td>@r.WorkdayID</td>
+                            <td><strong>@r.FullName</strong></td>
+                            <td>
+                                <span class="pref-badge @(r.Preference == "Veg" ? "veg" : "nonveg")">
+                                    @(r.Preference == "Veg" ? "🥦" : "🍗") @r.Preference
+                                </span>
+                            </td>
+                            <td></td>
+                        </tr>
+                        sno++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-table">
+                                <i class="fa-regular fa-calendar-xmark"></i>
+                                No registrations found for selected filters
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ── Apply Filter via Ajax ──
+        function applyFilter() {
+            var fromDate   = $('#filterFromDate').val();
+            var toDate     = $('#filterToDate').val();
+            var location   = $('#filterLocation').val();
+            var preference = $('#filterPreference').val();
+
+            // ✅ Validate date range
+            if (fromDate > toDate) {
+                alert('From Date cannot be greater than To Date!');
+                return;
+            }
+
+            var filter = {
+                fromDate   : fromDate,
+                toDate     : toDate,
+                location   : location,
+                preference : preference
+            };
+
+            // ✅ Update print subtitle
+            var from = new Date(fromDate + 'T00:00:00');
+            var to   = new Date(toDate   + 'T00:00:00');
+            var fromLabel = from.toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric' });
+            var toLabel = to.toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'short', year: 'numeric' });
+
+            var dateRange = fromDate === toDate
+                ? 'Date: ' + fromLabel
+                : 'From: ' + fromLabel + '  To: ' + toLabel;
+
+            $('#printSubtitle').text(
+                dateRange + '  |  Location: ' + location +
+                '  |  Preference: ' + preference
+            );
+
+            // Show loading
+            $('#tableLoading').show();
+            $('#regTable').hide();
+
+            $.ajax({
+                url: '@Url.Action("Filter", "Admin")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(filter),
+                success: function (res) {
+                    if (res.success) {
+                        // Update summary cards
+                        $('#totalCount').text(res.total);
+                        $('#vegCount').text(res.vegCount);
+                        $('#nonVegCount').text(res.nonVegCount);
+
+                        // Rebuild table
+                        var tbody = $('#tableBody');
+                        tbody.empty();
+
+                        if (res.data.length === 0) {
+                            tbody.append(
+                                '<tr><td colspan="5">' +
+                                '<div class="empty-table">' +
+                                '<i class="fa-regular fa-calendar-xmark"></i>' +
+                                'No registrations found for selected filters' +
+                                '</div></td></tr>'
+                            );
+                        } else {
+                            $.each(res.data, function (i, r) {
+                                var prefBadge = r.preference === 'Veg'
+                                    ? '<span class="pref-badge veg">🥦 Veg</span>'
+                                    : '<span class="pref-badge nonveg">🍗 NonVeg</span>';
+
+                                tbody.append(
+                                    '<tr>' +
+                                    '<td>' + r.sno + '</td>' +
+                                    '<td>' + r.workdayID + '</td>' +
+                                    '<td><strong>' + r.fullName + '</strong></td>' +
+                                    '<td>' + prefBadge + '</td>' +
+                                    '<td></td>' +
+                                    '</tr>'
+                                );
+                            });
+                        }
+                    }
+                },
+                error: function () {
+                    alert('Something went wrong. Please try again.');
+                },
+                complete: function () {
+                    $('#tableLoading').hide();
+                    $('#regTable').show();
+                }
+            });
+        }
+
+        // ── Export Excel ──
+        function exportExcel() {
+            var fromDate   = $('#filterFromDate').val();
+            var toDate     = $('#filterToDate').val();
+            var location   = $('#filterLocation').val();
+            var preference = $('#filterPreference').val();
+
+            var url = '@Url.Action("ExportExcel", "Admin")' +
+                '?fromDate='   + fromDate +
+                '&toDate='     + toDate +
+                '&location='   + encodeURIComponent(location) 
+
+            window.location.href = url;
+        }
+
+        // ── Auto load on page ready ──
+        $(document).ready(function () {
+            applyFilter();
+        });
+    </script>
+}

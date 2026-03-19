@@ -13,10 +13,164 @@
     int startOffset = ((int)firstDay.DayOfWeek + 6) % 7;
     var prevMonth = firstDay.AddMonths(-1);
     var nextMonth = firstDay.AddMonths(1);
+
+    // ── Banner Logic ──
+    var now = DateTime.Now;
+    var cutoffTime = today.Date.AddHours(16);
+    var isPastCutoff = now >= cutoffTime;
+
+    // Fetch company holiday dates from model
+    var companyHolidayDates = Model.Holidays
+        .Where(h => h.Type == "Company")
+        .Select(h => DateTime.Parse(h.Date).Date)
+        .ToList();
+
+    // Find next working day — skip weekends + company holidays
+    DateTime nextWorkingDay = today.AddDays(1);
+    while (
+        nextWorkingDay.DayOfWeek == DayOfWeek.Saturday ||
+        nextWorkingDay.DayOfWeek == DayOfWeek.Sunday ||
+        companyHolidayDates.Contains(nextWorkingDay.Date)
+    )
+    {
+        nextWorkingDay = nextWorkingDay.AddDays(1);
+    }
+
+    var isTomorrowWeekendOrHoliday = nextWorkingDay.Date != today.AddDays(1).Date;
+
+    var isNextDayRegistered = Model.RegisteredDays
+        .Any(r => r.Date == nextWorkingDay.ToString("yyyy-MM-dd"));
+
+    var minutesLeft = (int)(cutoffTime - now).TotalMinutes;
+    var hoursLeft = minutesLeft / 60;
+    var minsLeft = minutesLeft % 60;
 }
 
 @section Styles {
     <style>
+
+        /* ── Lunch Banner ── */
+        .lunch-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            border-radius: 14px;
+            padding: 14px 20px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+
+            .lunch-banner.warning {
+                background: #fffbeb;
+                border: 1.5px solid #fde68a;
+            }
+
+            .lunch-banner.danger {
+                background: #fef2f2;
+                border: 1.5px solid #fecaca;
+            }
+
+            .lunch-banner.success {
+                background: #f0fdf4;
+                border: 1.5px solid #bbf7d0;
+            }
+
+            .lunch-banner.info {
+                background: #eff6ff;
+                border: 1.5px solid #bfdbfe;
+            }
+
+        .banner-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .banner-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .lunch-banner.warning .banner-icon {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .lunch-banner.danger .banner-icon {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .lunch-banner.success .banner-icon {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .lunch-banner.info .banner-icon {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .banner-text .title {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .lunch-banner.warning .banner-text .title {
+            color: #92400e;
+        }
+
+        .lunch-banner.danger .banner-text .title {
+            color: #991b1b;
+        }
+
+        .lunch-banner.success .banner-text .title {
+            color: #14532d;
+        }
+
+        .lunch-banner.info .banner-text .title {
+            color: #1e40af;
+        }
+
+        .banner-text .subtitle {
+            font-size: 12px;
+        }
+
+        .lunch-banner.warning .banner-text .subtitle {
+            color: #b45309;
+        }
+
+        .lunch-banner.danger .banner-text .subtitle {
+            color: #b91c1c;
+        }
+
+        .lunch-banner.success .banner-text .subtitle {
+            color: #15803d;
+        }
+
+        .lunch-banner.info .banner-text .subtitle {
+            color: #1d4ed8;
+        }
+
+        .banner-countdown {
+            font-size: 20px;
+            font-weight: 700;
+            color: #d97706;
+            white-space: nowrap;
+            background: #fef3c7;
+            padding: 6px 16px;
+            border-radius: 10px;
+            border: 1px solid #fde68a;
+        }
+
         /* ── Delete button ── */
         .delete-btn {
             width: 22px;
@@ -48,10 +202,8 @@
             padding: 10px 12px;
             font-size: 11px;
             color: #dc2626;
-            justify-content:center;
-            width: 40%;
+            width: 100%;
             text-align: center;
-            align-content:center;
         }
 
         .confirm-yes {
@@ -65,7 +217,6 @@
             cursor: pointer;
             font-family: inherit;
             transition: all 0.15s;
-            justify-content:center;
         }
 
             .confirm-yes:hover {
@@ -88,29 +239,6 @@
             .confirm-no:hover {
                 background: #f9fafb;
             }
-
-        /* ── Badges ── */
-        .edit-badge {
-            font-size: 10px;
-            font-weight: 600;
-            color: #15803d;
-            background: #dcfce7;
-            border-radius: 4px;
-            padding: 1px 6px;
-            display: inline-block;
-            margin-top: 2px;
-        }
-
-        .new-badge {
-            font-size: 10px;
-            font-weight: 600;
-            color: #5b21b6;
-            background: #ede9fe;
-            border-radius: 4px;
-            padding: 1px 6px;
-            display: inline-block;
-            margin-top: 2px;
-        }
 
         .schedule-wrapper {
             display: grid;
@@ -203,7 +331,6 @@
             position: relative;
             user-select: none;
             cursor: pointer;
-            /* max-height: 52px; */
         }
 
             .cal-day.empty {
@@ -347,8 +474,8 @@
         /* ── Compact Legend ── */
         .legend-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px 8px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px 8px;
         }
 
         .legend-item {
@@ -411,7 +538,7 @@
 
         .selected-date-label {
             flex: 1;
-            font-size: 11px;
+            font-size: 13px;
             font-weight: 600;
             color: #1e1b4b;
             white-space: nowrap;
@@ -428,8 +555,8 @@
         }
 
         .pref-toggle-btn {
-            padding: 3px 6px;
-            font-size: 10px;
+            padding: 5px 10px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             border: none;
@@ -440,14 +567,19 @@
             font-family: inherit;
         }
 
+            .pref-toggle-btn:hover {
+                background: #ede9fe;
+                color: #5b21b6;
+            }
+
             .pref-toggle-btn.active-veg {
-                background: #dcfce7;
-                color: #15803d;
+                background: linear-gradient(135deg, #4a2d9c, #7c3aed);
+                color: white;
             }
 
             .pref-toggle-btn.active-nonveg {
-                background: #fff7ed;
-                color: #c2410c;
+                background: linear-gradient(135deg, #4a2d9c, #7c3aed);
+                color: white;
             }
 
         .remove-btn {
@@ -596,9 +728,112 @@
             .schedule-wrapper {
                 gap: 12px;
             }
+
+            .lunch-banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .banner-countdown {
+                font-size: 16px;
+            }
         }
+
     </style>
 }
+
+<!-- ── Smart Banner ── -->
+@if (isNextDayRegistered)
+{
+    <div class="lunch-banner success">
+        <div class="banner-left">
+            <div class="banner-icon">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="banner-text">
+                <div class="title">
+                    You're registered for @nextWorkingDay.ToString("dddd, dd MMM")! ✅
+                </div>
+                <div class="subtitle">
+                    @if (!isPastCutoff && !isTomorrowWeekendOrHoliday)
+                    {
+                        <span>You can still modify your preference before 4:00 PM today</span>
+                    }
+                    else if (isTomorrowWeekendOrHoliday)
+                    {
+                        <span>Next working day is @nextWorkingDay.ToString("dddd, dd MMM") — you're all set!</span>
+                    }
+                    else
+                    {
+                        <span>Registration is locked — see you at lunch! 🍱</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (isTomorrowWeekendOrHoliday)
+{
+    <div class="lunch-banner info" id="lunchBanner">
+        <div class="banner-left">
+            <div class="banner-icon">
+                <i class="fa-solid fa-calendar-week"></i>
+            </div>
+            <div class="banner-text">
+                <div class="title">
+                    Tomorrow is a
+                    @(today.AddDays(1).DayOfWeek == DayOfWeek.Saturday ||
+                                    today.AddDays(1).DayOfWeek == DayOfWeek.Sunday
+                                    ? "weekend 🎉"
+                                    : "company holiday 🎉")
+                </div>
+                <div class="subtitle">
+                    Next working day is
+                    <strong>@nextWorkingDay.ToString("dddd, dd MMM yyyy")</strong>
+                    — register your lunch for that day!
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (!isPastCutoff)
+{
+    <div class="lunch-banner warning" id="lunchBanner">
+        <div class="banner-left">
+            <div class="banner-icon">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <div class="banner-text">
+                <div class="title">Register for tomorrow's lunch before 4:00 PM!</div>
+                <div class="subtitle">
+                    Tomorrow is @nextWorkingDay.ToString("dddd, dd MMM yyyy") — don't miss out!
+                </div>
+            </div>
+        </div>
+        <div class="banner-countdown" id="countdownTimer">
+            @hoursLeft hr @minsLeft min left
+        </div>
+    </div>
+}
+else
+{
+    <div class="lunch-banner danger">
+        <div class="banner-left">
+            <div class="banner-icon">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <div class="banner-text">
+                <div class="title">Registration for tomorrow is now closed ❌</div>
+                <div class="subtitle">
+                    You can still register for
+                    <strong>@nextWorkingDay.ToString("dddd, dd MMM")</strong> onwards
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ── Schedule Wrapper ── -->
 <div class="schedule-wrapper">
 
     <!-- ── LEFT: Calendar ── -->
@@ -701,40 +936,40 @@
             </div>
             <div class="legend-grid">
                 <div class="legend-item">
-                    <div class="legend-box"
-                         style="background:#faf9ff;border-color:#ede9fe;"></div>
+                    <div class="legend-box" style="background:#faf9ff;border-color:#ede9fe;"></div>
                     Available
                 </div>
                 <div class="legend-item">
-                    <div class="legend-box"
-                         style="background:linear-gradient(135deg,#4a2d9c,#7c3aed);border-color:#7c3aed;"></div>
+                    <div class="legend-box" style="background:linear-gradient(135deg,#4a2d9c,#7c3aed);border-color:#7c3aed;"></div>
                     Selected
                 </div>
                 <div class="legend-item">
-                    <div class="legend-box"
-                         style="background:#dcfce7;border-color:#16a34a;"></div>
-                    Registered
+                    <div style="width:10px;height:10px;border-radius:50%;background:#16a34a;flex-shrink:0;"></div>
+                    <span style="color:#15803d;font-weight:600;">Veg</span>
                 </div>
+                
                 <div class="legend-item">
-                    <div class="legend-box"
-                         style="background:linear-gradient(135deg,#14532d,#16a34a);border-color:#15803d;"></div>
+                    <div class="legend-box" style="background:linear-gradient(135deg,#14532d,#16a34a);border-color:#15803d;"></div>
                     Editing
                 </div>
                 <div class="legend-item">
-                    <div class="legend-box"
-                         style="background:#fef2f2;border-color:#fecaca;"></div>
+                    <div class="legend-box" style="background:#fef2f2;border-color:#fecaca;"></div>
                     <span style="color:#dc2626;font-weight:600;">Company</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-box"
-                         style="background:#fffbeb;border-color:#fde68a;"></div>
+                    <div style="width:10px;height:10px;border-radius:50%;background:#ea580c;flex-shrink:0;"></div>
+                    <span style="color:#c2410c;font-weight:600;">Non-Veg</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-box" style="background:#fffbeb;border-color:#fde68a;"></div>
                     <span style="color:#d97706;font-weight:600;">Optional</span>
                 </div>
                 <div class="legend-item">
-                    <div class="legend-box"
-                         style="background:#f9fafb;border-color:#e5e7eb;"></div>
-                    <span style="color:#9ca3af;">Unavailable</span>
+                    <div class="legend-box" style="background:#dcfce7;border-color:#16a34a;"></div>
+                    Registered
                 </div>
+                
+               
             </div>
         </div>
 
@@ -763,6 +998,7 @@
 
     </div>
 </div>
+
 @section Scripts {
     <script>
         // ── Data from server ──
@@ -770,19 +1006,59 @@
                     Newtonsoft.Json.JsonConvert.SerializeObject(Model.RegisteredDays)
             );
 
-    // Two separate maps
-    var registeredMap = {};  // from server — already registered
-    var selectedMap   = {};  // new selections only — sent on submit
+    var registeredMap = {};
+    var selectedMap   = {};
 
         $(document).ready(function () {
-            // Load registered days into registeredMap only
             registeredDays.forEach(function (r) {
                 registeredMap[r.date] = r.preference;
             });
             updateCount();
+            startCountdown();
         });
 
-        // ── Toggle day on calendar click ──
+        // ── Live Countdown ──
+        function startCountdown() {
+            var banner = $('#lunchBanner');
+            if (banner.length === 0) return;
+
+            function tick() {
+                var now    = new Date();
+                var cutoff = new Date();
+                cutoff.setHours(16, 0, 0, 0);
+
+                var diff = cutoff - now;
+
+                if (diff <= 0) {
+                    banner.replaceWith(
+                        '<div class="lunch-banner danger">' +
+                            '<div class="banner-left">' +
+                                '<div class="banner-icon"><i class="fa-solid fa-circle-xmark"></i></div>' +
+                                '<div class="banner-text">' +
+                                    '<div class="title">Registration for tomorrow is now closed ❌</div>' +
+                                    '<div class="subtitle">You can still register for future dates</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>'
+                    );
+                    return;
+                }
+
+                var hours = Math.floor(diff / (1000 * 60 * 60));
+                var mins  = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                var secs  = Math.floor((diff % (1000 * 60)) / 1000);
+
+                $('#countdownTimer').text(
+                    hours + ' hr ' + mins + ' min ' + secs + ' sec left'
+                );
+
+                setTimeout(tick, 1000);
+            }
+
+            tick();
+        }
+
+        // ── Toggle day ──
         function toggleDay(el) {
             var date  = $(el).attr('data-date');
             var isReg = $(el).attr('data-registered') === 'true';
@@ -792,7 +1068,6 @@
             if (!date) return;
 
             if (selectedMap.hasOwnProperty(date)) {
-                // ── Deselect ──
                 delete selectedMap[date];
                 removeRow(date);
 
@@ -805,13 +1080,9 @@
                 } else {
                     $(el).removeClass('selected').addClass(isOpt ? 'optional-holiday' : 'available');
                 }
-
             } else {
-                // ── Select ──
                 var initPref = isReg ? registeredMap[date] : 'Veg';
                 selectedMap[date] = initPref;
-
-                // ✅ Pass isReg to renderRow so it knows which button to show
                 renderRow(date, initPref, isReg);
 
                 if (isReg) {
@@ -824,8 +1095,7 @@
             updateCount();
         }
 
-        // ── Render a row in the right panel ──
-        // ✅ isReg flag determines if row shows Delete or just Remove
+        // ── Render Row ──
         function renderRow(date, preference, isReg) {
             var dt    = new Date(date + 'T00:00:00');
             var label = dt.toLocaleDateString('en-IN', {
@@ -833,8 +1103,6 @@
             });
             var isVeg = preference === 'Veg';
 
-            // ✅ If already registered → show delete button (red trash)
-            // ✅ If new selection → show remove button (grey x)
             var actionBtn = isReg
                 ? '<button class="delete-btn" onclick="confirmDelete(\'' + date + '\', \'' + label + '\')" title="Cancel this registration">' +
                       '<i class="fa-solid fa-trash-can"></i>' +
@@ -843,17 +1111,9 @@
                       '<i class="fa-solid fa-xmark"></i>' +
                   '</button>';
 
-            // ✅ If registered → show edit badge
-            var badge = isReg
-                ? '<span class="edit-badge">Editing</span>'
-                : '<span class="new-badge">New</span>';
-
             var row = $(
                 '<div class="selected-row" id="row-' + date + '">' +
-                    '<div style="display:flex;flex-direction:column;flex:1;min-width:0;">' +
-                        '<span class="selected-date-label">📅 ' + label + '</span>' +
-                        
-                    '</div>' +
+                    '<span class="selected-date-label">📅 ' + label + '</span>' +
                     '<div class="pref-toggle">' +
                         '<button class="pref-toggle-btn ' + (isVeg ? 'active-veg' : '') + '" ' +
                                 'onclick="setPref(\'' + date + '\', \'Veg\', this)">🥦 Veg</button>' +
@@ -868,7 +1128,7 @@
             $('#selectedList').append(row);
         }
 
-        // ── Remove row from panel (UI only) ──
+        // ── Remove Row ──
         function removeRow(date) {
             $('#row-' + date).remove();
             if (Object.keys(selectedMap).length === 0) {
@@ -876,7 +1136,7 @@
             }
         }
 
-        // ── Remove NEW selection via x button ──
+        // ── Remove New Selection ──
         function removeDay(date) {
             var calCell = $('[data-date="' + date + '"]');
             var isReg   = calCell.attr('data-registered') === 'true';
@@ -898,39 +1158,107 @@
             updateCount();
         }
 
-        // ── Confirm Delete popup ──
+        // ── Confirm Delete ──
         function confirmDelete(date, label) {
-            // ✅ Show inline confirm inside the row instead of browser alert
             var row = $('#row-' + date);
-
-            // Prevent duplicate confirm
-            if (row.find('.confirm-box').length) return;
+            if (row.next('.confirm-box').length) return;
 
             var confirmBox = $(
                 '<div class="confirm-box">' +
                     '<span>Cancel lunch for <strong>' + label + '</strong>?</span>' +
-                        '<div style="display:flex;gap:6px;margin-top:8px;justify-content: center;">' +
+                    '<div style="display:flex;gap:6px;margin-top:8px;justify-content:center;">' +
                         '<button class="confirm-yes" onclick="deleteRegistration(\'' + date + '\')">Yes, Cancel</button>' +
                         '<button class="confirm-no" onclick="closeConfirm(\'' + date + '\')">No</button>' +
                     '</div>' +
                 '</div>'
             );
 
-            row.append(confirmBox);
+            row.after(confirmBox);
         }
 
-        // ── Close confirm box ──
+        // ── Close Confirm ──
         function closeConfirm(date) {
-            $('#row-' + date + ' .confirm-box').remove();
+            $('#row-' + date).next('.confirm-box').remove();
         }
+                // ── Update banner after delete ──
+        function updateBannerAfterDelete(deletedDate) {
 
-        // ── Delete registration from DB via Ajax ──
+            // Check if deleted date is the next working day
+            var nextWorkingDay = '@nextWorkingDay.ToString("yyyy-MM-dd")';
+
+            if (deletedDate !== nextWorkingDay) return;
+            // Only update banner if next working day was deleted
+
+            // Check if still before 4 PM
+            var now    = new Date();
+            var cutoff = new Date();
+            cutoff.setHours(16, 0, 0, 0);
+            var isPastCutoff = now >= cutoff;
+
+            var isTomorrowWeekendOrHoliday = @isTomorrowWeekendOrHoliday.ToString().ToLower();
+
+            var bannerHtml = '';
+
+            if (isTomorrowWeekendOrHoliday) {
+                // Show info banner
+                bannerHtml =
+                    '<div class="lunch-banner info" id="lunchBanner">' +
+                        '<div class="banner-left">' +
+                            '<div class="banner-icon"><i class="fa-solid fa-calendar-week"></i></div>' +
+                            '<div class="banner-text">' +
+                                '<div class="title">Tomorrow is a weekend/holiday 🎉</div>' +
+                                '<div class="subtitle">Register your lunch for the next working day!</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+            } else if (!isPastCutoff) {
+                // ✅ Switch to warning banner with countdown
+                var h = Math.floor((cutoff - now) / (1000 * 60 * 60));
+                var m = Math.floor(((cutoff - now) % (1000 * 60 * 60)) / (1000 * 60));
+                var s = Math.floor(((cutoff - now) % (1000 * 60)) / 1000);
+
+                bannerHtml =
+                    '<div class="lunch-banner warning" id="lunchBanner">' +
+                        '<div class="banner-left">' +
+                            '<div class="banner-icon"><i class="fa-solid fa-clock"></i></div>' +
+                            '<div class="banner-text">' +
+                                '<div class="title">Register for tomorrow\'s lunch before 4:00 PM!</div>' +
+                                '<div class="subtitle">Tomorrow is @nextWorkingDay.ToString("dddd, dd MMM yyyy") — don\'t miss out!</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="banner-countdown" id="countdownTimer">' +
+                            h + ' hr ' + m + ' min ' + s + ' sec left' +
+                        '</div>' +
+                    '</div>';
+            } else {
+                // Show danger banner
+                bannerHtml =
+                    '<div class="lunch-banner danger">' +
+                        '<div class="banner-left">' +
+                            '<div class="banner-icon"><i class="fa-solid fa-circle-xmark"></i></div>' +
+                            '<div class="banner-text">' +
+                                '<div class="title">Registration for tomorrow is now closed ❌</div>' +
+                                '<div class="subtitle">You can still register for future dates</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+            }
+
+            // ✅ Replace existing banner
+            $('.lunch-banner').replaceWith(bannerHtml);
+
+            // ✅ Restart countdown if warning banner shown
+            if (!isPastCutoff && !isTomorrowWeekendOrHoliday) {
+                startCountdown();
+            }
+        }
+        // ── Delete Registration ──
         function deleteRegistration(date) {
-            var calCell = $('[data-date="' + date + '"]');
+            var calCell    = $('[data-date="' + date + '"]');
+            var confirmBox = $('#row-' + date).next('.confirm-box');
 
-            // Disable row buttons during request
-            $('#row-' + date).find('button').prop('disabled', true);
-            $('#row-' + date + ' .confirm-box span').html(
+            confirmBox.find('button').prop('disabled', true);
+            confirmBox.find('span').html(
                 '<i class="fa-solid fa-spinner fa-spin"></i> Cancelling...'
             );
 
@@ -941,11 +1269,10 @@
                 data: JSON.stringify({ date: date }),
                 success: function (res) {
                     if (res.success) {
-                        // ✅ Remove from registeredMap
                         delete registeredMap[date];
                         delete selectedMap[date];
 
-                        // ✅ Remove row from panel
+                        confirmBox.remove();
                         $('#row-' + date).fadeOut(300, function () {
                             $(this).remove();
                             if (Object.keys(selectedMap).length === 0) {
@@ -953,7 +1280,6 @@
                             }
                         });
 
-                        // ✅ Reset calendar cell to available
                         calCell.removeClass('registered registered-selected')
                                .addClass('available')
                                .attr('data-registered', 'false')
@@ -962,22 +1288,22 @@
 
                         showToast(true, res.message);
                         updateCount();
-
+        updateBannerAfterDelete(date);
                     } else {
                         showToast(false, res.message);
-                        $('#row-' + date).find('button').prop('disabled', false);
+                        confirmBox.find('button').prop('disabled', false);
                         closeConfirm(date);
                     }
                 },
                 error: function () {
                     showToast(false, 'Something went wrong. Please try again.');
-                    $('#row-' + date).find('button').prop('disabled', false);
+                    confirmBox.find('button').prop('disabled', false);
                     closeConfirm(date);
                 }
             });
         }
 
-        // ── Set preference per day ──
+        // ── Set Preference ──
         function setPref(date, pref, btn) {
             selectedMap[date] = pref;
             var toggle = $(btn).closest('.pref-toggle');
@@ -985,14 +1311,14 @@
             $(btn).addClass(pref === 'Veg' ? 'active-veg' : 'active-nonveg');
         }
 
-        // ── Update count badge ──
+        // ── Update Count ──
         function updateCount() {
             var count = Object.keys(selectedMap).length;
             $('#dayCount').text(count);
             $('#btnSubmit').prop('disabled', count === 0);
         }
 
-        // ── Submit new/modified registrations ──
+        // ── Submit ──
         function submitRegistration() {
             var days = Object.keys(selectedMap).map(function (date) {
                 return { date: date, preference: selectedMap[date] };
@@ -1023,7 +1349,7 @@
             });
         }
 
-        // ── Show Toast ──
+        // ── Toast ──
         function showToast(success, message) {
             var el = $('#toastMsg');
             el.removeClass('success error')
@@ -1036,201 +1362,10 @@
             }
         }
 
-        // ── Reset Submit Button ──
+        // ── Reset Button ──
         function resetBtn() {
             $('#btnSubmit').prop('disabled', false)
                            .html('<i class="fa-solid fa-check"></i> Confirm Registration');
         }
     </script>
 }
-@* @section Scripts {
-    <script>
-        // ── Data from server ──
-        var registeredDays = @Html.Raw(
-                    Newtonsoft.Json.JsonConvert.SerializeObject(Model.RegisteredDays)
-            );
-
-    // ✅ Two separate maps
-    var registeredMap = {};  // from server — display only, NOT sent on submit
-    var selectedMap   = {};  // employee selections/modifications — sent on submit
-
-        $(document).ready(function () {
-            // Load registered days into registeredMap only — NOT selectedMap
-            registeredDays.forEach(function (r) {
-                registeredMap[r.date] = r.preference;
-            });
-            // Count badge starts at 0
-            updateCount();
-        });
-
-        // ── Toggle day on calendar click ──
-        function toggleDay(el) {
-            var date  = $(el).attr('data-date');
-            var isReg = $(el).attr('data-registered') === 'true';
-            var pref  = $(el).attr('data-preference') || 'Veg';
-            var isOpt = $(el).attr('data-optional') === 'true';
-
-            if (!date) return;
-
-            if (selectedMap.hasOwnProperty(date)) {
-                // ── Deselect ──
-                delete selectedMap[date];
-                removeRow(date);
-
-                // Restore calendar cell style
-                if (isReg) {
-                    $(el).removeClass('selected registered-selected').addClass('registered');
-                    // Restore dot
-                    if (!$(el).find('.pref-dot').length) {
-                        var prefClass = registeredMap[date] === 'Veg' ? 'veg' : 'nonveg';
-                        $(el).append('<div class="pref-dot ' + prefClass + '"></div>');
-                    }
-                } else {
-                    $(el).removeClass('selected').addClass(isOpt ? 'optional-holiday' : 'available');
-                }
-
-            } else {
-                // ── Select ──
-                // Use registered preference as default if already registered
-                var initPref = isReg ? registeredMap[date] : 'Veg';
-                selectedMap[date] = initPref;
-                renderRow(date, initPref);
-
-                // Update calendar cell style
-                if (isReg) {
-                    $(el).removeClass('registered').addClass('registered-selected');
-                } else {
-                    $(el).removeClass('available optional-holiday').addClass('selected');
-                }
-            }
-
-            updateCount();
-        }
-
-        // ── Render a row in the right panel ──
-        function renderRow(date, preference) {
-            // ✅ Fix Invalid Date — always append T00:00:00
-            var dt    = new Date(date + 'T00:00:00');
-            var label = dt.toLocaleDateString('en-IN', {
-                weekday: 'short', day: '2-digit', month: 'short'
-            });
-            var isVeg = preference === 'Veg';
-
-            var row = $(
-                '<div class="selected-row" id="row-' + date + '">' +
-                    '<span class="selected-date-label">📅 ' + label + '</span>' +
-                    '<div class="pref-toggle">' +
-                        '<button class="pref-toggle-btn ' + (isVeg ? 'active-veg' : '') + '" ' +
-                                'onclick="setPref(\'' + date + '\', \'Veg\', this)">🥦 Veg</button>' +
-                        '<button class="pref-toggle-btn ' + (!isVeg ? 'active-nonveg' : '') + '" ' +
-                                'onclick="setPref(\'' + date + '\', \'NonVeg\', this)">🍗 NV</button>' +
-                    '</div>' +
-                    '<button class="remove-btn" onclick="removeDay(\'' + date + '\')">' +
-                        '<i class="fa-solid fa-xmark"></i>' +
-                    '</button>' +
-                '</div>'
-            );
-
-            $('#emptyState').hide();
-            $('#selectedList').append(row);
-        }
-
-        // ── Remove a row from panel ──
-        function removeRow(date) {
-            $('#row-' + date).remove();
-            if (Object.keys(selectedMap).length === 0) {
-                $('#emptyState').show();
-            }
-        }
-
-        // ── Remove day via ❌ button ──
-        function removeDay(date) {
-            var calCell = $('[data-date="' + date + '"]');
-            var isReg   = calCell.attr('data-registered') === 'true';
-            var isOpt   = calCell.attr('data-optional') === 'true';
-
-            delete selectedMap[date];
-            removeRow(date);
-
-            // Restore calendar cell
-            if (isReg) {
-                calCell.removeClass('registered-selected').addClass('registered');
-                // Restore dot if missing
-                if (!calCell.find('.pref-dot').length) {
-                    var prefClass = registeredMap[date] === 'Veg' ? 'veg' : 'nonveg';
-                    calCell.append('<div class="pref-dot ' + prefClass + '"></div>');
-                }
-            } else {
-                calCell.removeClass('selected').addClass(isOpt ? 'optional-holiday' : 'available');
-            }
-
-            updateCount();
-        }
-
-        // ── Set preference per day ──
-        function setPref(date, pref, btn) {
-            selectedMap[date] = pref;
-            var toggle = $(btn).closest('.pref-toggle');
-            toggle.find('.pref-toggle-btn').removeClass('active-veg active-nonveg');
-            $(btn).addClass(pref === 'Veg' ? 'active-veg' : 'active-nonveg');
-        }
-
-        // ── Update count badge ──
-        function updateCount() {
-            var count = Object.keys(selectedMap).length;
-            $('#dayCount').text(count);
-            // ✅ Only enable if employee actually selected something new
-            $('#btnSubmit').prop('disabled', count === 0);
-        }
-
-        // ── Submit Registration ──
-        function submitRegistration() {
-            var days = Object.keys(selectedMap).map(function (date) {
-                return { date: date, preference: selectedMap[date] };
-            });
-
-            if (days.length === 0) return;
-
-            $('#btnSubmit').prop('disabled', true)
-                           .html('<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
-
-            $.ajax({
-                url: '@Url.Action("Save", "Lunch")',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ days: days }),
-                success: function (res) {
-                    showToast(res.success, res.message);
-                    if (res.success) {
-                        setTimeout(function () { location.reload(); }, 1800);
-                    } else {
-                        resetBtn();
-                    }
-                },
-                error: function () {
-                    showToast(false, 'Something went wrong. Please try again.');
-                    resetBtn();
-                }
-            });
-        }
-
-        // ── Show Toast ──
-        function showToast(success, message) {
-            var el = $('#toastMsg');
-            el.removeClass('success error')
-              .addClass(success ? 'success' : 'error')
-              .html('<i class="fa-solid fa-' + (success ? 'circle-check' : 'circle-exclamation') + '"></i> ' + message)
-              .css('display', 'flex');
-
-            if (!success) {
-                setTimeout(function () { el.fadeOut(); }, 4000);
-            }
-        }
-
-        // ── Reset Submit Button ──
-        function resetBtn() {
-            $('#btnSubmit').prop('disabled', false)
-                           .html('<i class="fa-solid fa-check"></i> Confirm Registration');
-        }
-    </script>
-} *@

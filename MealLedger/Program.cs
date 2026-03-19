@@ -30,6 +30,10 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddScoped<ILunchRepository, LunchRepository>();
 builder.Services.AddScoped<ILunchService, LunchService>();
+
+builder.Services.AddHostedService<CleanupService>();   // ✅ Auto cleanup
+builder.Services.AddHostedService<KeepAliveService>();
+builder.Services.AddHttpClient();
 // Add this line in Program.cs before var app = builder.Build();
 //ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 var app = builder.Build();

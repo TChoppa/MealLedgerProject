@@ -901,7 +901,9 @@ else
                 var isCutoff = isTomorrow && DateTime.Now.Hour >= 16;
                 var registered = Model.RegisteredDays.FirstOrDefault(r => r.Date == dateStr);
                 var isReg = registered != null;
-                var holiday = Model.Holidays.FirstOrDefault(h => h.Date == dateStr);
+              @*   var holiday = Model.Holidays.FirstOrDefault(h => h.Date == dateStr); *@
+                var holiday = Model.Holidays
+                .FirstOrDefault(h => DateTime.Parse(h.Date).Date == date.Date);
                 var isCompany = holiday?.Type == "Company";
                 var isOptional = holiday?.Type == "Optional";
 
@@ -918,7 +920,7 @@ else
                 else { css = "available"; clickable = true; }
 
                 var prefClass = isReg
-                ? (registered.Preference == "Veg" ? "veg" : "nonveg")
+                ? (registered?.Preference == "Veg" ? "veg" : "nonveg")
                 : "";
 
                 if (clickable)
@@ -926,7 +928,7 @@ else
                     <div class="cal-day @css"
                          data-date="@dateStr"
                          data-registered="@(isReg ? "true" : "false")"
-                         data-preference="@(isReg? registered.Preference: "Veg")"
+                         data-preference="@(isReg? registered?.Preference: "Veg")"
                          data-optional="@(isOptional ? "true" : "false")"
                          onclick="toggleDay(this)"
                          title="@(holiday != null ? holiday.Name : date.ToString("dd MMM yyyy"))">

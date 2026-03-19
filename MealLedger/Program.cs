@@ -43,7 +43,11 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
-
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["ngrok-skip-browser-warning"] = "69420";
+    await next();
+});
 app.UseHttpsRedirection();
 app.UseStaticFiles();        // ✅ changed from MapStaticAssets
 app.UseRouting();

@@ -106,26 +106,26 @@ namespace MealLedger.Controllers
             using var package = new ExcelPackage();
             var sheet = package.Workbook.Worksheets.Add("Lunch");
 
-            // ── Title Row ──
+            // ── Title Row ── (now 5 columns)
             sheet.Cells[1, 1].Value = "MealLedger — Lunch Registrations";
-            sheet.Cells[1, 1, 1, 4].Merge = true;
+            sheet.Cells[1, 1, 1, 5].Merge = true;
             sheet.Cells[1, 1].Style.Font.Bold = true;
             sheet.Cells[1, 1].Style.Font.Size = 14;
             sheet.Cells[1, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             sheet.Cells[1, 1].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
             sheet.Cells[1, 1].Style.Font.Color.SetColor(Color.White);
-            sheet.Cells[1, 1, 1, 4].Style.Fill.PatternType = ExcelFillStyle.Solid;
-            sheet.Cells[1, 1, 1, 4].Style.Fill.BackgroundColor
+            sheet.Cells[1, 1, 1, 5].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            sheet.Cells[1, 1, 1, 5].Style.Fill.BackgroundColor
                  .SetColor(Color.FromArgb(74, 45, 156));
             sheet.Row(1).Height = 28;
 
-            // ── Filter Info Row ──
+            // ── Filter Info Row ── (now 5 columns)
             var dateRange = fromDate == toDate
                 ? $"Date: {fromDate}"
                 : $"From: {fromDate}  To: {toDate}";
 
             sheet.Cells[2, 1].Value = $"{dateRange}  |  Location: {location}";
-            sheet.Cells[2, 1, 2, 4].Merge = true;
+            sheet.Cells[2, 1, 2, 5].Merge = true;
             sheet.Cells[2, 1].Style.Font.Italic = true;
             sheet.Cells[2, 1].Style.Font.Size = 10;
             sheet.Cells[2, 1].Style.Font.Color.SetColor(Color.FromArgb(91, 33, 182));
@@ -133,8 +133,8 @@ namespace MealLedger.Controllers
             sheet.Cells[2, 1].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
             sheet.Row(2).Height = 18;
 
-            // ── Summary Row — merged across all 4 columns, centered ──
-            sheet.Cells[3, 1, 3, 4].Merge = true;
+            // ── Summary Row ── (now 5 columns)
+            sheet.Cells[3, 1, 3, 5].Merge = true;
             sheet.Cells[3, 1].Value =
                 $"Total: {registrations.Count}          " +
                 $"Veg: {registrations.Count(r => r.Preference == "Veg")}          " +
@@ -149,8 +149,8 @@ namespace MealLedger.Controllers
             sheet.Cells[3, 1].Style.Font.Color.SetColor(Color.FromArgb(74, 45, 156));
             sheet.Row(3).Height = 20;
 
-            // ── Header Row ──
-            var headers = new[] { "S.No", "Work ID", "Name", "Signature" };
+            // ── Header Row ── ✅ Added Preference
+            var headers = new[] { "S.No", "Work ID", "Name", "Preference", "Signature" };
             for (int i = 0; i < headers.Length; i++)
             {
                 var cell = sheet.Cells[4, i + 1];
@@ -174,23 +174,24 @@ namespace MealLedger.Controllers
                 var row = i + 5;
                 var isAlt = i % 2 == 1;
 
-                sheet.Cells[row, 1].Value = i + 1;       // S.No
-                sheet.Cells[row, 2].Value = r.WorkdayID; // Work ID
-                sheet.Cells[row, 3].Value = r.FullName;  // Name
-                sheet.Cells[row, 4].Value = "";          // Signature — empty
+                sheet.Cells[row, 1].Value = i + 1;          // S.No
+                sheet.Cells[row, 2].Value = r.WorkdayID;    // Work ID
+                sheet.Cells[row, 3].Value = r.FullName;     // Name
+                sheet.Cells[row, 4].Value = r.Preference;   // ✅ Preference
+                sheet.Cells[row, 5].Value = "";             // Signature — empty
 
                 sheet.Row(row).Height = 24;
 
                 // Alternate row color
                 if (isAlt)
                 {
-                    sheet.Cells[row, 1, row, 4].Style.Fill.PatternType = ExcelFillStyle.Solid;
-                    sheet.Cells[row, 1, row, 4].Style.Fill.BackgroundColor
+                    sheet.Cells[row, 1, row, 5].Style.Fill.PatternType = ExcelFillStyle.Solid;
+                    sheet.Cells[row, 1, row, 5].Style.Fill.BackgroundColor
                          .SetColor(Color.FromArgb(237, 233, 254));
                 }
 
                 // Row border
-                sheet.Cells[row, 1, row, 4].Style.Border.BorderAround(
+                sheet.Cells[row, 1, row, 5].Style.Border.BorderAround(
                     ExcelBorderStyle.Thin, Color.FromArgb(209, 196, 233));
 
                 // Center S.No and WorkID
@@ -200,8 +201,28 @@ namespace MealLedger.Controllers
                 sheet.Cells[row, 2].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
                 sheet.Cells[row, 3].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
 
+                // ✅ Preference cell color — Veg green, NonVeg orange
+                sheet.Cells[row, 4].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                sheet.Cells[row, 4].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+                sheet.Cells[row, 4].Style.Fill.PatternType = ExcelFillStyle.Solid;
+
+                if (r.Preference == "Veg")
+                {
+                    sheet.Cells[row, 4].Style.Fill.BackgroundColor
+                         .SetColor(Color.FromArgb(220, 252, 231)); // green
+                    sheet.Cells[row, 4].Style.Font.Color
+                         .SetColor(Color.FromArgb(21, 128, 61));   // dark green
+                }
+                else
+                {
+                    sheet.Cells[row, 4].Style.Fill.BackgroundColor
+                         .SetColor(Color.FromArgb(255, 247, 237)); // orange
+                    sheet.Cells[row, 4].Style.Font.Color
+                         .SetColor(Color.FromArgb(194, 65, 12));   // dark orange
+                }
+
                 // Signature cell — thick purple border
-                sheet.Cells[row, 4].Style.Border.BorderAround(
+                sheet.Cells[row, 5].Style.Border.BorderAround(
                     ExcelBorderStyle.Medium, Color.FromArgb(124, 58, 237));
             }
 
@@ -209,7 +230,8 @@ namespace MealLedger.Controllers
             sheet.Column(1).Width = 8;   // S.No
             sheet.Column(2).Width = 15;  // Work ID
             sheet.Column(3).Width = 30;  // Name
-            sheet.Column(4).Width = 25;  // Signature
+            sheet.Column(4).Width = 15;  // ✅ Preference
+            sheet.Column(5).Width = 25;  // Signature
 
             // ── Print Settings ──
             sheet.PrinterSettings.Orientation = eOrientation.Portrait;
@@ -230,7 +252,6 @@ namespace MealLedger.Controllers
                 fileName);
         }
 
-       
 
     }
 }

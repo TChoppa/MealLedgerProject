@@ -12,6 +12,122 @@
     int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
     var weekStart = today.AddDays(-diff);
     var weekDays = Enumerable.Range(0, 5).Select(i => weekStart.AddDays(i)).ToList();
+
+    // ── Smart Status Logic ──
+    var now = DateTime.Now;
+    var cutoffTime = today.Date.AddHours(16);
+    var isPastCutoff = now >= cutoffTime;
+    var tomorrow = today.AddDays(1);
+
+    // Find next working day after today
+    DateTime nextWorkingDay = tomorrow;
+    while (
+        nextWorkingDay.DayOfWeek == DayOfWeek.Saturday ||
+        nextWorkingDay.DayOfWeek == DayOfWeek.Sunday
+    )
+    {
+        nextWorkingDay = nextWorkingDay.AddDays(1);
+    }
+
+    var isTomorrowWeekendOrHoliday = nextWorkingDay.Date != tomorrow.Date;
+
+    // Check registrations
+    var isTodayRegistered = Model.IsTodayRegistered;
+
+    var isTomorrowRegistered = Model.ThisWeekRegistrations != null &&
+        Model.ThisWeekRegistrations
+            .Any(r => r.LunchDate.Date == nextWorkingDay.Date);
+
+    // Find next available day after tomorrow (for after 4PM closed case)
+    DateTime nextAvailableDay = nextWorkingDay.AddDays(1);
+    while (
+        nextAvailableDay.DayOfWeek == DayOfWeek.Saturday ||
+        nextAvailableDay.DayOfWeek == DayOfWeek.Sunday
+    )
+    {
+        nextAvailableDay = nextAvailableDay.AddDays(1);
+    }
+
+    // Status variables
+    string statusTitle;
+    string statusSubtitle;
+    string statusIcon;
+    string statusDotClass;
+
+    if (!isPastCutoff)
+    {
+        // ── Before 4 PM ──
+        if (isTodayRegistered)
+        {
+            // State 1 — Registered today
+            statusTitle = "You're registered for today's lunch ✅";
+            statusSubtitle = today.ToString("dddd, dd MMM yyyy");
+            statusIcon = "fa-check";
+            statusDotClass = "yes";
+        }
+        else if (isTomorrowRegistered)
+        {
+            // State 2 — Not today but registered tomorrow
+            statusTitle = "You're registered for tomorrow's lunch ✅";
+            statusSubtitle = $"{nextWorkingDay:dddd, dd MMM yyyy} — today's lunch was skipped";
+            statusIcon = "fa-check";
+            statusDotClass = "yes";
+        }
+        else
+        {
+            // State 3 — Not today, not tomorrow
+            statusTitle = "Not registered for today's lunch";
+            statusSubtitle = $"{today:dddd, dd MMM yyyy} — register for tomorrow!";
+            statusIcon = "fa-clock";
+            statusDotClass = "no";
+        }
+    }
+    else if (isTomorrowWeekendOrHoliday)
+    {
+        // ── After 4 PM + Tomorrow is weekend/holiday ──
+        if (isTomorrowRegistered)
+        {
+            // State 8 — Weekend/holiday, next day registered
+            statusTitle = $"You're registered for {nextWorkingDay:dddd, dd MMM}! ✅";
+            statusSubtitle = "Next working day — you're all set!";
+            statusIcon = "fa-check";
+            statusDotClass = "yes";
+        }
+        else
+        {
+            // State 6 & 7 — Weekend or holiday, not registered
+            var tomorrowLabel = tomorrow.DayOfWeek == DayOfWeek.Saturday ||
+                                tomorrow.DayOfWeek == DayOfWeek.Sunday
+                                ? "weekend 🎉" : "company holiday 🎉";
+
+            statusTitle = $"Tomorrow is a {tomorrowLabel}";
+            statusSubtitle = $"Next working day: {nextWorkingDay:dddd, dd MMM yyyy} — register your lunch!";
+            statusIcon = "fa-calendar-week";
+            statusDotClass = "blue";
+        }
+    }
+    else
+    {
+        // ── After 4 PM + Tomorrow is working day ──
+        if (isTomorrowRegistered)
+        {
+            // State 4 — Tomorrow registered
+            statusTitle = "You're registered for tomorrow's lunch ✅";
+            //statusSubtitle = nextWorkingDay.ToString("dddd, dd MMM yyyy");
+            statusSubtitle = $"You can still register for future dates";
+            statusIcon = "fa-check";
+            statusDotClass = "yes";
+        }
+        else
+        {
+            // State 5 — Tomorrow closed, show next available
+            statusTitle = "Tomorrow's registration is now closed ❌";
+           // statusSubtitle = $"Next available: {nextAvailableDay:dddd, dd MMM yyyy} — register now!";
+            statusSubtitle=$"You can still register for future dates"; 
+            statusIcon = "fa-circle-xmark";
+            statusDotClass = "red";
+        }
+    }
 }
 
 @section Styles {
@@ -153,7 +269,6 @@
             margin-top: 4px;
         }
 
-        /* Section Title */
         .section-title {
             font-size: 16px;
             font-weight: 700;
@@ -252,7 +367,7 @@
                 color: #a89fd8;
             }
 
-        /* Today Status Card */
+        /* Status Card */
         .status-card {
             background: white;
             border-radius: 16px;
@@ -294,6 +409,16 @@
                 color: #d97706;
             }
 
+            .status-dot.red {
+                background: #fef2f2;
+                color: #dc2626;
+            }
+
+            .status-dot.blue {
+                background: #eff6ff;
+                color: #2563eb;
+            }
+
         .status-text .title {
             font-size: 16px;
             font-weight: 700;
@@ -330,7 +455,7 @@
                 text-decoration: none;
             }
 
-        /* Admin bottom cards */
+        /* Admin */
         .admin-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -452,26 +577,18 @@
 }
 else
 {
-    <!-- Today Status -->
+    <!-- ✅ Smart Status Card — all 8 states -->
     <div class="status-card">
         <div class="status-info">
-            @if (Model.IsTodayRegistered)
-            {
-                <div class="status-dot yes"><i class="fa-solid fa-check"></i></div>
-                <div class="status-text">
-                    <div class="title">You're registered for today's lunch ✅</div>
-                    <div class="sub">@today.ToString("dddd, dd MMM yyyy")</div>
-                </div>
-            }
-            else
-            {
-                <div class="status-dot no"><i class="fa-solid fa-clock"></i></div>
-                <div class="status-text">
-                    <div class="title">Not registered for today's lunch</div>
-                    <div class="sub">@today.ToString("dddd, dd MMM yyyy")</div>
-                </div>
-            }
+            <div class="status-dot @statusDotClass">
+                <i class="fa-solid @statusIcon"></i>
+            </div>
+            <div class="status-text">
+                <div class="title">@statusTitle</div>
+                <div class="sub">@statusSubtitle</div>
+            </div>
         </div>
+        <!-- ✅ Always show Register Lunch button -->
         <a href="@Url.Action("Schedule", "Lunch")" class="btn-schedule">
             <i class="fa-solid fa-calendar-plus"></i> Register Lunch
         </a>
@@ -489,8 +606,12 @@ else
                 var isToday = day.Date == today.Date;
                 var isPast = day.Date < today.Date;
                 var isRegistered = Model.ThisWeekRegistrations != null &&
-                Model.ThisWeekRegistrations.Any(r => r.LunchDate.Date == day.Date);
-                var cssClass = isRegistered ? "registered" : (isToday ? "today-day" : (isPast ? "past-day" : ""));
+                Model.ThisWeekRegistrations
+                .Any(r => r.LunchDate.Date == day.Date);
+                var cssClass = isRegistered ? "registered"
+                : isToday ? "today-day"
+                : isPast ? "past-day"
+                : "";
 
                 <div class="week-day @cssClass">
                     <div class="day-name">@day.ToString("ddd")</div>
@@ -518,7 +639,7 @@ else
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Auto refresh dashboard every 5 minutes
+            // Auto refresh every 5 minutes
             setTimeout(function () {
                 location.reload();
             }, 300000);

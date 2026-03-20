@@ -6,9 +6,10 @@
     ViewData["ActivePage"] = "Dashboard";
 
     var today = Model.Today;
+    //var today = new DateTime(2026, 3, 21).Date; // ← change this to test different days
     var isAdmin = Model.Role == "Admin";
 
-    // Week days Mon-Fri
+    // Week days Mon–Fri
     int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
     var weekStart = today.AddDays(-diff);
     var weekDays = Enumerable.Range(0, 5).Select(i => weekStart.AddDays(i)).ToList();
@@ -18,6 +19,13 @@
     var cutoffTime = today.Date.AddHours(16);
     var isPastCutoff = now >= cutoffTime;
     var tomorrow = today.AddDays(1);
+
+    // ── FIX: Check if TODAY is a weekend or holiday ──
+    var isTodayWeekend = today.DayOfWeek == DayOfWeek.Saturday || today.DayOfWeek == DayOfWeek.Sunday;
+    // (add company holiday check here if you have that list on DashboardViewModel)
+    // var isTodayHoliday = Model.CompanyHolidays?.Contains(today.Date) ?? false;
+    // var isTodayWeekendOrHoliday = isTodayWeekend || isTodayHoliday;
+    var isTodayWeekendOrHoliday = isTodayWeekend;
 
     // Find next working day after today
     DateTime nextWorkingDay = tomorrow;
@@ -35,10 +43,9 @@
     var isTodayRegistered = Model.IsTodayRegistered;
 
     var isTomorrowRegistered = Model.ThisWeekRegistrations != null &&
-        Model.ThisWeekRegistrations
-            .Any(r => r.LunchDate.Date == nextWorkingDay.Date);
+        Model.ThisWeekRegistrations.Any(r => r.LunchDate.Date == nextWorkingDay.Date);
 
-    // Find next available day after tomorrow (for after 4PM closed case)
+    // Find next available day after next working day (for after 4PM closed case)
     DateTime nextAvailableDay = nextWorkingDay.AddDays(1);
     while (
         nextAvailableDay.DayOfWeek == DayOfWeek.Saturday ||
@@ -54,9 +61,35 @@
     string statusIcon;
     string statusDotClass;
 
-    if (!isPastCutoff)
+    // ── FIX: Handle weekend/holiday TODAY first, before any other checks ──
+    if (isTodayWeekendOrHoliday)
     {
-        // ── Before 4 PM ──
+        var todayLabel = isTodayWeekend
+            ? (today.DayOfWeek == DayOfWeek.Saturday ? "Saturday" : "Sunday")
+            : "today";
+
+        if (isTomorrowRegistered)
+        {
+            // Weekend today, but already registered for next working day
+            statusTitle = $"Today is a weekend 🎉 — You're all set!";
+            statusSubtitle = $"Registered for {nextWorkingDay:dddd, dd MMM yyyy}";
+            statusIcon = "fa-check";
+            statusDotClass = "yes";
+        }
+        else
+        {
+            // Weekend today, not registered for next working day
+            var nextDayLabel = tomorrow.DayOfWeek == DayOfWeek.Saturday || tomorrow.DayOfWeek == DayOfWeek.Sunday
+                ? "weekend" : "working day";
+            statusTitle = $"Today is {today.DayOfWeek} — enjoy your weekend! 🎉";
+            statusSubtitle = $"Next working day: {nextWorkingDay:dddd, dd MMM yyyy} — register your lunch!";
+            statusIcon = "fa-calendar-week";
+            statusDotClass = "blue";
+        }
+    }
+    else if (!isPastCutoff)
+    {
+        // ── Before 4 PM, today is a working day ──
         if (isTodayRegistered)
         {
             // State 1 — Registered today
@@ -67,7 +100,7 @@
         }
         else if (isTomorrowRegistered)
         {
-            // State 2 — Not today but registered tomorrow
+            // State 2 — Not today but registered for next working day
             statusTitle = "You're registered for tomorrow's lunch ✅";
             statusSubtitle = $"{nextWorkingDay:dddd, dd MMM yyyy} — today's lunch was skipped";
             statusIcon = "fa-check";
@@ -75,9 +108,11 @@
         }
         else
         {
-            // State 3 — Not today, not tomorrow
+            // State 3 — Not registered at all
             statusTitle = "Not registered for today's lunch";
-            statusSubtitle = $"{today:dddd, dd MMM yyyy} — register for tomorrow!";
+            statusSubtitle = isTomorrowWeekendOrHoliday
+                ? $"{today:dddd, dd MMM yyyy} — next working day: {nextWorkingDay:dddd, dd MMM}"
+                : $"{today:dddd, dd MMM yyyy} — register for tomorrow!";
             statusIcon = "fa-clock";
             statusDotClass = "no";
         }
@@ -87,7 +122,7 @@
         // ── After 4 PM + Tomorrow is weekend/holiday ──
         if (isTomorrowRegistered)
         {
-            // State 8 — Weekend/holiday, next day registered
+            // State 8 — Next working day registered
             statusTitle = $"You're registered for {nextWorkingDay:dddd, dd MMM}! ✅";
             statusSubtitle = "Next working day — you're all set!";
             statusIcon = "fa-check";
@@ -95,11 +130,10 @@
         }
         else
         {
-            // State 6 & 7 — Weekend or holiday, not registered
+            // State 6 & 7 — Weekend/holiday tomorrow, not registered
             var tomorrowLabel = tomorrow.DayOfWeek == DayOfWeek.Saturday ||
                                 tomorrow.DayOfWeek == DayOfWeek.Sunday
                                 ? "weekend 🎉" : "company holiday 🎉";
-
             statusTitle = $"Tomorrow is a {tomorrowLabel}";
             statusSubtitle = $"Next working day: {nextWorkingDay:dddd, dd MMM yyyy} — register your lunch!";
             statusIcon = "fa-calendar-week";
@@ -108,22 +142,20 @@
     }
     else
     {
-        // ── After 4 PM + Tomorrow is working day ──
+        // ── After 4 PM + Tomorrow is a working day ──
         if (isTomorrowRegistered)
         {
             // State 4 — Tomorrow registered
             statusTitle = "You're registered for tomorrow's lunch ✅";
-            //statusSubtitle = nextWorkingDay.ToString("dddd, dd MMM yyyy");
-            statusSubtitle = $"You can still register for future dates";
+            statusSubtitle = "You can still register for future dates";
             statusIcon = "fa-check";
             statusDotClass = "yes";
         }
         else
         {
-            // State 5 — Tomorrow closed, show next available
-            statusTitle = "Tomorrow's registration is now closed ❌";
-           // statusSubtitle = $"Next available: {nextAvailableDay:dddd, dd MMM yyyy} — register now!";
-            statusSubtitle=$"You can still register for future dates"; 
+            // State 5 — Tomorrow not registered, window closed
+            statusTitle = "Today's registration window is now closed ❌";
+            statusSubtitle = "You can still register for future dates";
             statusIcon = "fa-circle-xmark";
             statusDotClass = "red";
         }
@@ -200,7 +232,6 @@
                 margin-top: 4px;
             }
 
-        /* Stat Cards */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -284,7 +315,6 @@
                 font-size: 15px;
             }
 
-        /* Week Strip */
         .week-strip {
             background: white;
             border-radius: 16px;
@@ -367,7 +397,6 @@
                 color: #a89fd8;
             }
 
-        /* Status Card */
         .status-card {
             background: white;
             border-radius: 16px;
@@ -455,7 +484,6 @@
                 text-decoration: none;
             }
 
-        /* Admin */
         .admin-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -536,7 +564,6 @@
 
 @if (isAdmin)
 {
-    <!-- Admin Stats -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-icon purple"><i class="fa-solid fa-users"></i></div>
@@ -561,7 +588,6 @@
         </div>
     </div>
 
-    <!-- Admin Quick Actions -->
     <div class="status-card">
         <div class="status-info">
             <div class="status-dot yes"><i class="fa-solid fa-print"></i></div>
@@ -577,7 +603,7 @@
 }
 else
 {
-    <!-- ✅ Smart Status Card — all 8 states -->
+    <!-- Smart Status Card -->
     <div class="status-card">
         <div class="status-info">
             <div class="status-dot @statusDotClass">
@@ -588,7 +614,6 @@ else
                 <div class="sub">@statusSubtitle</div>
             </div>
         </div>
-        <!-- ✅ Always show Register Lunch button -->
         <a href="@Url.Action("Schedule", "Lunch")" class="btn-schedule">
             <i class="fa-solid fa-calendar-plus"></i> Register Lunch
         </a>
@@ -606,8 +631,7 @@ else
                 var isToday = day.Date == today.Date;
                 var isPast = day.Date < today.Date;
                 var isRegistered = Model.ThisWeekRegistrations != null &&
-                Model.ThisWeekRegistrations
-                .Any(r => r.LunchDate.Date == day.Date);
+                Model.ThisWeekRegistrations.Any(r => r.LunchDate.Date == day.Date);
                 var cssClass = isRegistered ? "registered"
                 : isToday ? "today-day"
                 : isPast ? "past-day"
@@ -623,10 +647,12 @@ else
                         }
                         else if (isPast)
                         {
+
                             <i class="fa-solid fa-xmark"></i>
                         }
                         else
                         {
+
                             <span>—</span>
                         }
                     </div>
@@ -639,10 +665,7 @@ else
 @section Scripts {
     <script>
         $(document).ready(function () {
-            // Auto refresh every 5 minutes
-            setTimeout(function () {
-                location.reload();
-            }, 300000);
+            setTimeout(function () { location.reload(); }, 300000);
         });
     </script>
 }

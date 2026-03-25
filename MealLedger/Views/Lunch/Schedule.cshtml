@@ -6,7 +6,7 @@
     ViewData["ActivePage"] = "Lunch";
 
     var today = DateTime.Today;
-    // var today = new DateTime(2026, 3, 22).Date;
+    //var today = new DateTime(2026, 3, 26).Date;
     var currentMonth = Model.CurrentMonth;
     var currentYear = Model.CurrentYear;
     var firstDay = new DateTime(currentYear, currentMonth, 1);
@@ -895,9 +895,9 @@ else
                 if (isWeekend) { css = "weekend"; clickable = false; }
                 else if (isToday) { css = "today-day"; clickable = false; }
                 else if (isPast) { css = "past"; clickable = false; }
-                else if (isCutoff) { css = "past"; clickable = false; }
                 else if (isCompany) { css = "company-holiday"; clickable = false; }
-                else if (isReg) { css = "registered"; clickable = true; }
+                else if (isReg) { css = "registered"; clickable = true; }  // ← checked BEFORE cutoff
+                else if (isCutoff) { css = "past"; clickable = false; }  // ← only blocks unregistered
                 else if (isOptional) { css = "optional-holiday"; clickable = true; }
                 else { css = "available"; clickable = true; }
 
